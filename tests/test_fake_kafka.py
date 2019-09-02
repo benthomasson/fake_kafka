@@ -50,21 +50,17 @@ async def test_producer(loop, fake_kafka_server):
         await producer.stop()
     assert producer.stopped
     assert len(fake_kafka_server.topics['my_topic']) == 1
-    assert fake_kafka_server.topics['my_topic'][0] == b"Super message"
+    assert fake_kafka_server.topics['my_topic'][0].value == b"Super message"
 
 
 @pytest.mark.asyncio
-async def test_consumer(loop):
+async def test_consumer(loop, fake_kafka_server):
     consumer = fake_kafka.AIOKafkaConsumer("my_topic", loop=loop)
     await consumer.start()
     assert consumer.started
     try:
         async for msg in consumer:
-            print(
-                "{}:{:d}:{:d}: key={} value={} timestamp_ms={}".format(
-                    msg.topic, msg.partition, msg.offset, msg.key, msg.value,
-                    msg.timestamp)
-            )
+            assert False
     finally:
         await consumer.stop()
     assert consumer.stopped
@@ -80,16 +76,10 @@ async def test_producer_and_consumer(loop, fake_kafka_server):
     try:
         await producer.send_and_wait("my_topic", b"Super message")
         assert len(fake_kafka_server.topics['my_topic']) == 1
-        assert fake_kafka_server.topics['my_topic'][0] == b"Super message"
-        found_message = False
-        async for msg in consumer:
-            print(
-                "{}:{:d}:{:d}: key={} value={} timestamp_ms={}".format(
-                    msg.topic, msg.partition, msg.offset, msg.key, msg.value,
-                    msg.timestamp)
-            )
-            found_message = True
-        assert found_message
+        assert fake_kafka_server.topics['my_topic'][0].value == b"Super message"
+        ai = consumer.__aiter__()
+        msg = await ai.__anext__()
+        assert msg
     finally:
         await consumer.stop()
         await producer.stop()

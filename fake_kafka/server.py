@@ -2,7 +2,6 @@
 
 from collections import defaultdict
 
-
 # Singleton FakeKafkaServer
 class FakeKafkaServer:
 
@@ -18,7 +17,11 @@ class FakeKafkaServer:
     def _init_topics(cls):
         cls.__instance.topics = defaultdict(list)
 
+    def all_partitions(self):
+        return [1]
+
     def send(self, topic, message):
+        message = message._replace(offset=len(self.topics[topic]))
         self.topics[topic].append(message)
 
     def get(self, topic, index):
