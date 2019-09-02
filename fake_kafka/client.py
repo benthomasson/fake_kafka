@@ -37,7 +37,7 @@ class AIOKafkaProducer:
         if key is None and partition is None:
             partition = self.get_random_partition()
         else:
-            partition = self.partitions_by_key(key)
+            partition = self.partitions_by_key[key]
         if timestamp_ms is None:
             timestamp_ms = int(time.time() * 1000)
         self.server.send(topic, FakeKafkaMessage(topic, partition, offset, key, value, timestamp_ms))

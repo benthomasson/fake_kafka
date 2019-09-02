@@ -17,6 +17,7 @@ Sphinx = "==1.8.1"
 flake8 = "==3.5.0"
 mypy = "*"
 pytest-asyncio = "*"
+docopt = "*"
 
 [requires]
 python_version = "3.6"
