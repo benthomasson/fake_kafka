@@ -5,7 +5,7 @@ import time
 
 from ..server import FakeKafkaServer
 
-from ..exceptions import FakeKafkaProducerStateError, FakeKafkaConsumerStateError
+from ..exceptions import FakeKafkaProducerStateError
 
 from ..messages import FakeKafkaMessage
 
@@ -17,15 +17,14 @@ class AIOKafkaProducer:
             self.server = FakeKafkaServer()
         self.started = False
         self.stopped = False
-        self.all_partitions = self.server.all_partitions()
         self.partitions_by_key = defaultdict(self.get_random_partition)
 
     async def start(self):
         self.started = True
         self.stopped = False
 
-    def get_random_partition(self):
-        return random.choice(self.all_partitions)
+    def get_random_partition(self, topic):
+        return random.choice(self.server.all_partitions(topic))
 
     async def send_and_wait(self, topic, value, key=None, partition=None, timestamp_ms=None):
         if not self.started:
@@ -34,7 +33,7 @@ class AIOKafkaProducer:
             raise FakeKafkaProducerStateError('Send occurred when producer has been stopped')
         offset = None
         if key is None and partition is None:
-            partition = self.get_random_partition()
+            partition = self.get_random_partition(topic)
         elif partition is None:
             partition = self.partitions_by_key[key]
         if timestamp_ms is None:

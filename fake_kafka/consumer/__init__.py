@@ -4,40 +4,109 @@ from ..server import FakeKafkaServer
 from ..exceptions import FakeKafkaConsumerStateError
 
 
+class State:
+
+    def enter(self, machine):
+        pass
+
+    def exit(self, machine):
+        pass
+
+
+class _NotStarted(State):
+
+    def start(self, machine):
+        machine.change_state(Started)
+
+    def stop(self, machine):
+        raise FakeKafkaConsumerStateError('Stop occurred when consumer had not been started')
+
+    def __aiter__(self, machine):
+        raise FakeKafkaConsumerStateError('Consumer had not been started')
+
+    def __anext__(self, machine):
+        raise FakeKafkaConsumerStateError('Consumer had not been started')
+
+
+NotStarted = _NotStarted()
+
+
+class _Started(State):
+
+    def enter(self, machine):
+        machine.started = True
+        machine.server.consumer_subscribe(machine, machine.topic)
+
+    def exit(self, machine):
+        machine.started = False
+
+    def start(self, machine):
+        pass
+
+    def stop(self, machine):
+        machine.change_state(Stopped)
+
+    def __aiter__(self, machine):
+        return machine
+
+    async def __anext__(self, machine):
+        message = machine.server.get(machine, machine.topic)
+        machine.offset += 1
+        if message is None:
+            raise StopAsyncIteration
+        else:
+            return message
+
+
+Started = _Started()
+
+
+class _Stopped(State):
+
+    def enter(self, machine):
+        machine.stopped = True
+
+    def exit(self, machine):
+        raise FakeKafkaConsumerStateError('Consumers cannot be restarted')
+
+    def __aiter__(self, machine):
+        raise FakeKafkaConsumerStateError('Consumer has been stopped')
+
+    def __anext__(self, machine):
+        raise FakeKafkaConsumerStateError('Consumer has been stopped')
+
+
+Stopped = _Stopped()
+
+
 class AIOKafkaConsumer:
 
     def __init__(self, topic, loop=None, bootstrap_servers=None, group_id=None, auto_offset_reset=None):
         if bootstrap_servers is None:
             self.server = FakeKafkaServer()
+        self.loop = loop
         self.topic = topic
         self.started = False
         self.stopped = False
         self.offset = 0
+        self.state = NotStarted
 
-    def check_started(self):
-        if not self.started:
-            raise FakeKafkaConsumerStateError('Stop occurred when consumer had not been started')
+    def change_state(self, state):
+        self.state.exit(self)
+        self.state = state
+        self.state.enter(self)
 
     async def start(self):
-        self.started = True
-        self.stopped = False
+        self.state.start(self)
 
     async def stop(self):
-        self.check_started()
-        self.stopped = True
+        self.state.stop(self)
 
     def __aiter__(self):
-        self.check_started()
-        return self
+        return self.state.__aiter__(self)
 
     async def __anext__(self):
-        self.check_started()
-        message = self.server.get(self.topic, self.offset)
-        self.offset += 1
-        if message is None:
-            raise StopAsyncIteration
-        else:
-            return message
+        return await self.state.__anext__(self)
 
     async def getone(self):
         return self.__anext__()
