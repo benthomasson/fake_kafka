@@ -36,7 +36,7 @@ class AIOKafkaProducer:
         offset = None
         if key is None and partition is None:
             partition = self.get_random_partition()
-        else:
+        elif partition is None:
             partition = self.partitions_by_key[key]
         if timestamp_ms is None:
             timestamp_ms = int(time.time() * 1000)
