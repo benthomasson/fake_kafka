@@ -17,7 +17,7 @@ class AIOKafkaProducer:
             self.server = FakeKafkaServer()
         self.started = False
         self.stopped = False
-        self.partitions_by_key = defaultdict(self.get_random_partition)
+        self.partitions_by_key = dict()
 
     async def start(self):
         self.started = True
@@ -35,6 +35,8 @@ class AIOKafkaProducer:
         if key is None and partition is None:
             partition = self.get_random_partition(topic)
         elif partition is None:
+            if key not in self.partitions_by_key:
+                self.partitions_by_key[key] = self.get_random_partition(topic)
             partition = self.partitions_by_key[key]
         if timestamp_ms is None:
             timestamp_ms = int(time.time() * 1000)

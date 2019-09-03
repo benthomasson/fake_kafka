@@ -55,7 +55,7 @@ class FakeKafkaServer:
         return self.partitions[topic]
 
     def send(self, topic, message):
-        message = message._replace(offset=len(self.topics[topic]))
+        message = message._replace(offset=len(self.topics[topic][message.partition]))
         self.topics[topic][message.partition].append(message)
 
     def consumer_hello(self, consumer):
@@ -83,6 +83,7 @@ class FakeKafkaServer:
     def get(self, consumer, topic):
         partition = self.consumers_to_partitions[(topic, consumer)]
         offset = self.partition_offsets[(topic, partition)]
+        self.partition_offsets[(topic, partition)] += 1
         if offset < len(self.topics[topic][partition]):
             return self.topics[topic][partition][offset]
         else:
