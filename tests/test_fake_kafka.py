@@ -101,6 +101,7 @@ async def test_producer_and_consumer(loop, fake_kafka_server):
 
 @pytest.mark.asyncio
 async def test_producer_and_consumer_same_group(loop, fake_kafka_server):
+    fake_kafka.FakeKafkaServer._init_topics(partitions_per_topic=2)
     producer = fake_kafka.AIOKafkaProducer(loop=loop)
     await producer.start()
     assert producer.started
@@ -113,17 +114,19 @@ async def test_producer_and_consumer_same_group(loop, fake_kafka_server):
     try:
         await producer.send_and_wait("my_topic", b"Super message1")
         await producer.send_and_wait("my_topic", b"Super message2")
-        assert len(fake_kafka_server.topics['my_topic'][0]) == 2
+        assert len(fake_kafka_server.topics['my_topic'][0]) == 1
         assert fake_kafka_server.topics['my_topic'][0][0].value == b"Super message1"
-        assert fake_kafka_server.topics['my_topic'][0][1].value == b"Super message2"
+        assert fake_kafka_server.topics['my_topic'][1][0].value == b"Super message2"
         ai = consumer1.__aiter__()
         msg = await ai.__anext__()
         assert msg.partition == 0
         assert msg.offset == 0
         assert msg.value == b"Super message1"
         ai = consumer2.__aiter__()
-        with pytest.raises(StopAsyncIteration):
-            await ai.__anext__()
+        msg = await ai.__anext__()
+        assert msg.partition == 1
+        assert msg.offset == 0
+        assert msg.value == b"Super message2"
     finally:
         await consumer1.stop()
         await producer.stop()

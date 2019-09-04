@@ -43,7 +43,7 @@ class FakeKafkaServer:
         cls.__instance.topics = defaultdict(cls.__instance.build_partitions)
         cls.__instance.partitions = defaultdict(lambda: list(range(partitions_per_topic)))
         cls.__instance.consumers_state = defaultdict(lambda: (Unknown, None))
-        cls.__instance.topics_to_consumers = defaultdict(set)
+        cls.__instance.topics_to_consumers = defaultdict(list)
         cls.__instance.consumers_to_topics = defaultdict(list)
         cls.__instance.consumers_to_groups = defaultdict(lambda: None)
         cls.__instance.consumers_to_partitions = defaultdict(lambda: -1)
@@ -65,7 +65,7 @@ class FakeKafkaServer:
     def consumer_subscribe(self, consumer, topic, group_id):
         self.consumers_to_groups[consumer] = group_id
         self.consumers_state[consumer] = (Alive, time.time())
-        self.topics_to_consumers[(topic, group_id)].add(consumer)
+        self.topics_to_consumers[(topic, group_id)].append(consumer)
         self.consumers_to_topics[consumer].append(topic)
         self.consumer_rebalance(topic, group_id)
 

@@ -2,6 +2,7 @@
 from collections import defaultdict
 import random
 import time
+from itertools import cycle
 
 from ..server import FakeKafkaServer
 
@@ -17,14 +18,17 @@ class AIOKafkaProducer:
             self.server = FakeKafkaServer()
         self.started = False
         self.stopped = False
+        self.all_partitions_cycle = dict()
         self.partitions_by_key = dict()
 
     async def start(self):
         self.started = True
         self.stopped = False
 
-    def get_random_partition(self, topic):
-        return random.choice(self.server.all_partitions(topic))
+    def get_next_partition(self, topic):
+        if topic not in self.all_partitions_cycle:
+            self.all_partitions_cycle[topic] = cycle(self.server.all_partitions(topic))
+        return next(self.all_partitions_cycle[topic])
 
     async def send_and_wait(self, topic, value, key=None, partition=None, timestamp_ms=None):
         if not self.started:
@@ -33,10 +37,10 @@ class AIOKafkaProducer:
             raise FakeKafkaProducerStateError('Send occurred when producer has been stopped')
         offset = None
         if key is None and partition is None:
-            partition = self.get_random_partition(topic)
+            partition = self.get_next_partition(topic)
         elif partition is None:
             if key not in self.partitions_by_key:
-                self.partitions_by_key[key] = self.get_random_partition(topic)
+                self.partitions_by_key[key] = self.get_next_partition(topic)
             partition = self.partitions_by_key[key]
         if timestamp_ms is None:
             timestamp_ms = int(time.time() * 1000)
