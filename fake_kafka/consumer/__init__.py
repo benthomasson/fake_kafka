@@ -35,7 +35,7 @@ class _Started(State):
 
     def enter(self, machine):
         machine.started = True
-        machine.server.consumer_subscribe(machine, machine.topic)
+        machine.server.consumer_subscribe(machine, machine.topic, machine.group_id)
 
     def exit(self, machine):
         machine.started = False
@@ -85,6 +85,7 @@ class AIOKafkaConsumer:
         if bootstrap_servers is None:
             self.server = FakeKafkaServer()
         self.loop = loop
+        self.group_id = group_id
         self.topic = topic
         self.started = False
         self.stopped = False
@@ -132,7 +133,7 @@ class AIOKafkaConsumer:
     async def assignment(self):
         pass
 
-    async def subscribe(self, topic):
+    async def subscribe(self, topics):
         pass
 
     async def last_stable_offset(self, tp):
