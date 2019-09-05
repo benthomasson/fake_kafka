@@ -70,7 +70,7 @@ async def test_get_message(api_server_factory, fake_kafka_server):
     api_server = api_server_factory()
     proxy = FakeKafkaServerProxy("http://127.0.0.1:8000")
     response = await proxy.get(Consumer(consumer_id='1'), 'events')
-    assert await response.json() == None
+    assert response == None
     api_server.join()
 
 
@@ -87,5 +87,5 @@ async def test_send_get_message(api_server_factory, fake_kafka_server):
                                                 42))
     assert fake_kafka_server.topics["events"][0][0].value == "hello"
     response = await proxy.get(Consumer(consumer_id='1'), 'events')
-    assert await response.json() == ['events', 0, 0, None, 'hello', 42]
+    assert response == ['events', 0, 0, None, 'hello', 42]
     api_server.join()

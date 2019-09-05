@@ -20,12 +20,12 @@ class FakeKafkaServerProxy:
                                           group_id=group_id))
 
     async def get(self, consumer, topic):
-        return await self.session.get(urljoin(self.address,
+        response = await self.session.get(urljoin(self.address,
                                               '/topic_message/{topic}/{consumer_id}'.format(topic=topic,
                                                                                             consumer_id=consumer.consumer_id)))
+        return await response.json()
 
     async def send(self, topic, message):
-        print(message)
         return await self.session.post(urljoin(self.address,
                                               '/topic_message'),
                                        json=dict(topic=topic,
@@ -33,3 +33,8 @@ class FakeKafkaServerProxy:
                                                  key=message.key,
                                                  value=message.value,
                                                  timestamp=message.timestamp))
+
+    async def all_partitions(self, topic):
+        response = await self.session.get(urljoin(self.address,
+                                              '/all_partitions/{topic}'.format(topic=topic)))
+        return await response.json()

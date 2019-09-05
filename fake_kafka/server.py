@@ -56,10 +56,10 @@ class FakeKafkaServer:
     def build_partitions(self):
         return defaultdict(list)
 
-    def all_partitions(self, topic):
+    async def all_partitions(self, topic):
         return self.partitions[topic]
 
-    def send(self, topic, message):
+    async def send(self, topic, message):
         message = message._replace(offset=len(self.topics[topic][message.partition]))
         self.topics[topic][message.partition].append(message)
 
@@ -102,13 +102,13 @@ class FakeKafkaServer:
         logger.debug('topics_to_consumers: %s', self.topics_to_consumers[(topic, group_id)])
         if len(self.topics_to_consumers[(topic, group_id)]) > 0:
             consumers = cycle(self.topics_to_consumers[(topic, group_id)])
-            partitions = self.all_partitions(topic)
+            partitions = self.partitions[topic]
             logger.debug('partitions: %s', partitions)
             for partition in partitions:
                 self.consumers_to_partitions[(topic, next(consumers), group_id)] = partition
         logger.debug('consumer_rebalance done')
 
-    def get(self, consumer, topic):
+    async def get(self, consumer, topic):
         logger.debug('get consumer: %s topic: %s', consumer, topic)
         group_id = self.consumers_to_groups[consumer]
         logger.debug('topic: %s consumer: %s group_id: %s', topic, consumer, group_id)

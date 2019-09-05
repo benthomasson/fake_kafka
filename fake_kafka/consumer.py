@@ -53,7 +53,7 @@ class _Started(State):
         return machine
 
     async def __anext__(self, machine):
-        message = machine.server.get(machine, machine.topic)
+        message = await machine.server.get(machine, machine.topic)
         machine.offset += 1
         if message is None:
             raise StopAsyncIteration
@@ -89,7 +89,7 @@ class AIOKafkaConsumer:
             self.server = FakeKafkaServer()
         else:
             self.server = FakeKafkaServerProxy(bootstrap_servers[0])
-        self.customer_id = uuid.uuid4()
+        self.consumer_id = str(uuid.uuid4())
         self.loop = loop
         self.group_id = group_id
         self.topic = topic
@@ -116,37 +116,4 @@ class AIOKafkaConsumer:
         return await self.state.__anext__(self)
 
     async def getone(self):
-        return self.__anext__()
-
-    async def getmany(self, timeout_ms=1000):
-        return self.__anext__()
-
-    async def position(self, tp):
-        return 0
-
-    async def committed(self, tp):
-        return 0
-
-    async def commit(self):
-        pass
-
-    async def seek(self, tp, offset):
-        pass
-
-    async def assign(self, tp_list):
-        pass
-
-    async def assignment(self):
-        pass
-
-    async def subscribe(self, topics):
-        pass
-
-    async def last_stable_offset(self, tp):
-        pass
-
-    async def end_offsets(self, tp_list):
-        pass
-
-    async def seek_to_end(self, tp):
-        pass
+        return await self.state.__anext__(self)

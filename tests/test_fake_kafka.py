@@ -28,13 +28,11 @@ async def test_client_async_for():
     consumer = fake_kafka.AIOKafkaConsumer('test')
     await consumer.start()
     assert consumer.started
-    try:
-        async for msg in consumer:
-            print(msg)
-
-    finally:
-        await consumer.stop()
-        assert consumer.stopped
+    ai = consumer.__aiter__()
+    with pytest.raises(StopAsyncIteration):
+        await ai.__anext__()
+    await consumer.stop()
+    assert consumer.stopped
 
 
 @pytest.mark.asyncio
@@ -60,11 +58,10 @@ async def test_consumer(loop, fake_kafka_server):
     assert fake_kafka_server.consumers_to_topics[consumer] == ['my_topic']
     assert fake_kafka_server.consumers_to_partitions[('my_topic', consumer, None)] == 0
     assert consumer.started
-    try:
-        async for msg in consumer:
-            assert False
-    finally:
-        await consumer.stop()
+    ai = consumer.__aiter__()
+    with pytest.raises(StopAsyncIteration):
+        await ai.__anext__()
+    await consumer.stop()
     assert consumer.stopped
 
 

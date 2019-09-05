@@ -10,7 +10,7 @@ app = FastAPI()
 
 @app.get("/all_partitions/{topic}")
 async def all_partitions(topic: str):
-    return FakeKafkaServer().all_partitions(topic)
+    return await FakeKafkaServer().all_partitions(topic)
 
 
 class Consumer(BaseModel):
@@ -44,7 +44,7 @@ async def consumer_unsubscribe(consumer_id: str):
 
 @app.get("/topic_message/{topic}/{consumer_id}")
 async def get_topic_message(topic: str, consumer_id: str):
-    return FakeKafkaServer().get(consumer_id, topic)
+    return await FakeKafkaServer().get(consumer_id, topic)
 
 
 class Message(BaseModel):
@@ -58,17 +58,9 @@ class Message(BaseModel):
 
 @app.post("/topic_message/")
 async def send_topic_message(message: Message):
-    return FakeKafkaServer().send(message.topic, messages.FakeKafkaMessage(message.topic,
+    return await FakeKafkaServer().send(message.topic, messages.FakeKafkaMessage(message.topic,
                                                                            message.partition,
                                                                            None,
                                                                            message.key,
                                                                            message.value,
                                                                            message.timestamp))
-
-
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    while True:
-        data = await websocket.receive_text()
-        await websocket.send_text(f"Message text was: {data}")
