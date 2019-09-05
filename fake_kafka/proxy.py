@@ -27,7 +27,7 @@ class FakeKafkaServerProxy:
 
     async def send(self, topic, message):
         return await self.session.post(urljoin(self.address,
-                                              '/topic_message'),
+                                              '/topic_message/'),
                                        json=dict(topic=topic,
                                                  partition=message.partition,
                                                  key=message.key,
