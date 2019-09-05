@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
 """Tests for `fake_kafka` package."""
 
 import asyncio
@@ -70,6 +67,7 @@ async def test_consumer(loop, fake_kafka_server):
         await consumer.stop()
     assert consumer.stopped
 
+
 @pytest.mark.asyncio
 async def test_producer_and_consumer(loop, fake_kafka_server):
     producer = fake_kafka.AIOKafkaProducer(loop=loop)
@@ -98,6 +96,7 @@ async def test_producer_and_consumer(loop, fake_kafka_server):
         await producer.stop()
     assert consumer.stopped
     assert producer.stopped
+
 
 @pytest.mark.asyncio
 async def test_producer_and_consumer_same_group(loop, fake_kafka_server):
@@ -134,6 +133,7 @@ async def test_producer_and_consumer_same_group(loop, fake_kafka_server):
     assert consumer1.stopped
     assert consumer2.stopped
     assert producer.stopped
+
 
 @pytest.mark.asyncio
 async def test_producer_and_consumer_different_groups(loop, fake_kafka_server):

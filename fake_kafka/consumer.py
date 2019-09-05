@@ -1,24 +1,27 @@
 
+import uuid
 
-from ..server import FakeKafkaServer
-from ..exceptions import FakeKafkaConsumerStateError
+from .server import FakeKafkaServer
+from .exceptions import FakeKafkaConsumerStateError
+
+from .proxy import FakeKafkaServerProxy
 
 
 class State:
 
-    def enter(self, machine):
+    async def enter(self, machine):
         pass
 
-    def exit(self, machine):
+    async def exit(self, machine):
         pass
 
 
 class _NotStarted(State):
 
-    def start(self, machine):
-        machine.change_state(Started)
+    async def start(self, machine):
+        await machine.change_state(Started)
 
-    def stop(self, machine):
+    async def stop(self, machine):
         raise FakeKafkaConsumerStateError('Stop occurred when consumer had not been started')
 
     def __aiter__(self, machine):
@@ -33,18 +36,18 @@ NotStarted = _NotStarted()
 
 class _Started(State):
 
-    def enter(self, machine):
+    async def enter(self, machine):
         machine.started = True
-        machine.server.consumer_subscribe(machine, machine.topic, machine.group_id)
+        await machine.server.consumer_subscribe(machine, machine.topic, machine.group_id)
 
-    def exit(self, machine):
+    async def exit(self, machine):
         machine.started = False
 
-    def start(self, machine):
+    async def start(self, machine):
         pass
 
-    def stop(self, machine):
-        machine.change_state(Stopped)
+    async def stop(self, machine):
+        await machine.change_state(Stopped)
 
     def __aiter__(self, machine):
         return machine
@@ -63,10 +66,10 @@ Started = _Started()
 
 class _Stopped(State):
 
-    def enter(self, machine):
+    async def enter(self, machine):
         machine.stopped = True
 
-    def exit(self, machine):
+    async def exit(self, machine):
         raise FakeKafkaConsumerStateError('Consumers cannot be restarted')
 
     def __aiter__(self, machine):
@@ -84,6 +87,9 @@ class AIOKafkaConsumer:
     def __init__(self, topic, loop=None, bootstrap_servers=None, group_id=None, auto_offset_reset=None):
         if bootstrap_servers is None:
             self.server = FakeKafkaServer()
+        else:
+            self.server = FakeKafkaServerProxy(bootstrap_servers[0])
+        self.customer_id = uuid.uuid4()
         self.loop = loop
         self.group_id = group_id
         self.topic = topic
@@ -92,16 +98,16 @@ class AIOKafkaConsumer:
         self.offset = 0
         self.state = NotStarted
 
-    def change_state(self, state):
-        self.state.exit(self)
+    async def change_state(self, state):
+        await self.state.exit(self)
         self.state = state
-        self.state.enter(self)
+        await self.state.enter(self)
 
     async def start(self):
-        self.state.start(self)
+        await self.state.start(self)
 
     async def stop(self):
-        self.state.stop(self)
+        await self.state.stop(self)
 
     def __aiter__(self):
         return self.state.__aiter__(self)

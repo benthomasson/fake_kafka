@@ -4,11 +4,11 @@ import random
 import time
 from itertools import cycle
 
-from ..server import FakeKafkaServer
+from .server import FakeKafkaServer
 
-from ..exceptions import FakeKafkaProducerStateError
+from .exceptions import FakeKafkaProducerStateError
 
-from ..messages import FakeKafkaMessage
+from .messages import FakeKafkaMessage
 
 
 class AIOKafkaProducer:

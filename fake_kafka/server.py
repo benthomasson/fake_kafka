@@ -1,9 +1,13 @@
 
+import time
+import logging
+
+logger = logging.getLogger(__name__)
 
 from collections import defaultdict
 
 from itertools import cycle
-import time
+
 
 
 class _Unknown:
@@ -61,40 +65,56 @@ class FakeKafkaServer:
 
     def consumer_hello(self, consumer):
         self.consumers_state[consumer] = (Alive, time.time())
+        return consumer
 
-    def consumer_subscribe(self, consumer, topic, group_id):
+    async def consumer_subscribe(self, consumer, topic, group_id):
         self.consumers_to_groups[consumer] = group_id
         self.consumers_state[consumer] = (Alive, time.time())
         self.topics_to_consumers[(topic, group_id)].append(consumer)
         self.consumers_to_topics[consumer].append(topic)
         self.consumer_rebalance(topic, group_id)
+        return (consumer, topic, group_id)
 
     def consumer_unsubscribe_all(self, consumer):
+        logger.debug('consumer_unsubscribe_all start')
+        logger.debug('consumer: %s', consumer)
         group_id = self.consumers_to_groups[consumer]
+        logger.debug('group_id: %s', group_id)
         del self.consumers_to_groups[consumer]
-        for topic in self.consumers_to_topics:
-            self.topics_to_consumers[(topic, group_id)].remove(consumer)
-            del self.consumers_to_partitions[(topic, consumer, group_id)]
-            self.consumer_rebalance(topic)
+        for topic in self.consumers_to_topics[consumer]:
+            logger.debug('topic %s', topic)
+            logger.debug('topics_to_consumers %s', self.topics_to_consumers)
+            logger.debug('topics_to_consumers %s', self.topics_to_consumers[(topic, group_id)])
+            if consumer in self.topics_to_consumers[(topic, group_id)]:
+                self.topics_to_consumers[(topic, group_id)].remove(consumer)
+            if (topic, consumer, group_id) in self.consumers_to_partitions:
+                del self.consumers_to_partitions[(topic, consumer, group_id)]
+            self.consumer_rebalance(topic, group_id)
         self.consumers_to_topics[consumer] = list()
+        logger.debug('consumer_unsubscribe_all done')
+        return consumer
 
     def consumer_rebalance(self, topic, group_id):
+        logger.debug('consumer_rebalance start')
         for key in list(self.consumers_to_partitions.keys()):
             if key[0] == topic and key[2] == group_id:
                 del self.consumers_to_partitions[key]
-        print(self.topics_to_consumers[(topic, group_id)])
-        consumers = cycle(self.topics_to_consumers[(topic, group_id)])
-        partitions = self.all_partitions(topic)
-        print(partitions)
-        for partition in partitions:
-            self.consumers_to_partitions[(topic, next(consumers), group_id)] = partition
+        logger.debug('topics_to_consumers: %s', self.topics_to_consumers[(topic, group_id)])
+        if len(self.topics_to_consumers[(topic, group_id)]) > 0:
+            consumers = cycle(self.topics_to_consumers[(topic, group_id)])
+            partitions = self.all_partitions(topic)
+            logger.debug('partitions: %s', partitions)
+            for partition in partitions:
+                self.consumers_to_partitions[(topic, next(consumers), group_id)] = partition
+        logger.debug('consumer_rebalance done')
 
     def get(self, consumer, topic):
+        logger.debug('get consumer: %s topic: %s', consumer, topic)
         group_id = self.consumers_to_groups[consumer]
-        print((topic, consumer, group_id))
+        logger.debug('topic: %s consumer: %s group_id: %s', topic, consumer, group_id)
         partition = self.consumers_to_partitions[(topic, consumer, group_id)]
         if partition == -1:
-            print('no partition')
+            logger.debug('no partition')
             return None
         offset = self.partition_offsets[(topic, partition, group_id)]
         self.partition_offsets[(topic, partition, group_id)] += 1
