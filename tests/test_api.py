@@ -62,3 +62,19 @@ def test_get_message(test_client, fake_kafka_server):
     response = test_client.get('/topic_message/events/1')
     assert response.status_code == 200
     assert response.json() == ['events', 0, 0, None, 'hello', None]
+
+
+def test_send_message_websocket(test_client, fake_kafka_server):
+    with test_client.websocket_connect("/producer_topic_message_ws") as websocket:
+        websocket.send_json(dict(topic="events",
+                                 partition=0,
+                                 value="hello"))
+    assert fake_kafka_server.topics["events"][0][0].value == "hello"
+
+
+def test_get_message_websocket(test_client, fake_kafka_server):
+    test_send_message_websocket(test_client, fake_kafka_server)
+    test_consumer_subscribe(test_client, fake_kafka_server)
+    with test_client.websocket_connect("/consumer_topic_message_ws/events/1") as websocket:
+        message = websocket.receive_json()
+    assert message == ['events', 0, 0, None, 'hello', None]

@@ -1,4 +1,5 @@
 
+import asyncio
 import pytest
 import threading
 import time
@@ -88,4 +89,43 @@ async def test_send_get_message(api_server_factory, fake_kafka_server):
     assert fake_kafka_server.topics["events"][0][0].value == "hello"
     response = await proxy.get(Consumer(consumer_id='1'), 'events')
     assert response == ['events', 0, 0, None, 'hello', 42]
+    api_server.join()
+
+
+@pytest.mark.asyncio
+async def test_send_message_web_socket(api_server_factory, fake_kafka_server):
+    api_server = api_server_factory()
+    proxy = FakeKafkaServerProxy("http://127.0.0.1:8000", use_websocket=True)
+    await proxy.send('events', FakeKafkaMessage("events",
+                                                0,
+                                                None,
+                                                None,
+                                                "hello",
+                                                int(time.time() * 1000)))
+    # A sleep is needed here since the server is running in a different thread
+    await asyncio.sleep(0.1)
+    assert fake_kafka_server.topics["events"][0][0].value == "hello"
+    await proxy.close()
+    # Work-around to get the server thread to close.  We need a single non-websocket request.
+    requests.get("http://127.0.0.1:8000/docs")
+    api_server.join()
+
+
+@pytest.mark.asyncio
+async def test_send_get_message_websocket(api_server_factory, fake_kafka_server):
+    api_server = api_server_factory(3)
+    proxy = FakeKafkaServerProxy("http://127.0.0.1:8000", use_websocket=True)
+    await proxy.consumer_subscribe(Consumer(consumer_id='1'), 'events', 'a')
+    await proxy.send('events', FakeKafkaMessage("events",
+                                                0,
+                                                None,
+                                                None,
+                                                "hello",
+                                                42))
+    await asyncio.sleep(0.1)
+    response = await proxy.get(Consumer(consumer_id='1'), 'events')
+    assert response == ['events', 0, 0, None, 'hello', 42]
+    await proxy.close()
+    # Work-around to get the server thread to close.  We need a single non-websocket request.
+    requests.get("http://127.0.0.1:8000/docs")
     api_server.join()

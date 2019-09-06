@@ -1,9 +1,15 @@
+import logging
+
 from fastapi import FastAPI
 from starlette.websockets import WebSocket
 from pydantic import BaseModel
 
 from .server import FakeKafkaServer
 from . import messages
+
+from starlette.websockets import WebSocketDisconnect
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
@@ -64,3 +70,34 @@ async def send_topic_message(message: Message):
                                                                            message.key,
                                                                            message.value,
                                                                            message.timestamp))
+
+
+@app.websocket("/producer_topic_message_ws")
+async def producer_topic_message_ws(websocket: WebSocket):
+    await websocket.accept()
+    while True:
+        try:
+            message = await websocket.receive_json()
+            logger.debug(message)
+            await FakeKafkaServer().send(message['topic'], messages.FakeKafkaMessage(message['topic'],
+                                                                               message['partition'],
+                                                                               None,
+                                                                               message.get('key'),
+                                                                               message['value'],
+                                                                               message.get('timestamp')))
+        except WebSocketDisconnect:
+            break
+
+
+@app.websocket("/consumer_topic_message_ws/{topic}/{consumer_id}")
+async def producer_topic_message_ws(websocket: WebSocket, topic: str, consumer_id: str):
+    await websocket.accept()
+    server = FakeKafkaServer()
+    while True:
+        try:
+            message = await server.get(consumer_id, topic)
+            if message is None:
+                break
+            await websocket.send_json(message)
+        except WebSocketDisconnect:
+            break
