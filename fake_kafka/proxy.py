@@ -32,7 +32,12 @@ class FakeKafkaServerProxy:
 
             logger.debug('connected consumer_websocket')
         if self.use_websocket:
-            return await self.consumer_websocket.receive_json()
+            try:
+                data = await self.consumer_websocket.receive_json()
+                logger.debug('data %s', data)
+                return data
+            except TypeError as e:
+                logger.error(e)
         else:
             response = await self.session.get(urljoin(self.address,
                                                       '/topic_message/{topic}/{consumer_id}'.format(topic=topic,

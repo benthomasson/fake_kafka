@@ -84,11 +84,11 @@ Stopped = _Stopped()
 
 class AIOKafkaConsumer:
 
-    def __init__(self, topic, loop=None, bootstrap_servers=None, group_id=None, auto_offset_reset=None):
+    def __init__(self, topic, loop=None, bootstrap_servers=None, group_id=None, auto_offset_reset=None, use_websocket=False):
         if bootstrap_servers is None:
             self.server = FakeKafkaServer()
         else:
-            self.server = FakeKafkaServerProxy(bootstrap_servers[0])
+            self.server = FakeKafkaServerProxy(bootstrap_servers[0], use_websocket=use_websocket)
         self.consumer_id = str(uuid.uuid4())
         self.loop = loop
         self.group_id = group_id

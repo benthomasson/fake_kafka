@@ -14,11 +14,11 @@ from .proxy import FakeKafkaServerProxy
 
 class AIOKafkaProducer:
 
-    def __init__(self, loop=None, bootstrap_servers=None):
+    def __init__(self, loop=None, bootstrap_servers=None, use_websocket=False):
         if bootstrap_servers is None:
             self.server = FakeKafkaServer()
         else:
-            self.server = FakeKafkaServerProxy(bootstrap_servers[0])
+            self.server = FakeKafkaServerProxy(bootstrap_servers[0], use_websocket=use_websocket)
         self.started = False
         self.stopped = False
         self.all_partitions_cycle = dict()
