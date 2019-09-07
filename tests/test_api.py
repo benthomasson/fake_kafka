@@ -82,7 +82,6 @@ def test_get_message_websocket(test_client, fake_kafka_server):
 
 def test_seek(test_client, fake_kafka_server):
     test_get_message(test_client, fake_kafka_server)
-    response = test_client.get('/topic_message/events/1')
     response = test_client.post("/topic_partition_offset/", json=dict(consumer_id="1", topic="events", partition=0, offset=0))
     assert response.status_code == 200, response.text
     response = test_client.get('/topic_message/events/1')

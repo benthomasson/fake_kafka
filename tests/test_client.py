@@ -12,7 +12,7 @@ from fake_kafka.producer import AIOKafkaProducer
 
 @pytest.mark.asyncio
 async def test_subscribe(api_server_factory, fake_kafka_server):
-    api_server = api_server_factory()
+    api_server, _ = api_server_factory()
     loop = asyncio.get_event_loop()
     consumer = AIOKafkaConsumer(topic="events", loop=loop, bootstrap_servers=["http://127.0.0.1:8000"], group_id='a')
     await consumer.start()
@@ -25,7 +25,7 @@ async def test_subscribe(api_server_factory, fake_kafka_server):
 
 @pytest.mark.asyncio
 async def test_send(api_server_factory, fake_kafka_server):
-    api_server = api_server_factory()
+    api_server, _ = api_server_factory()
     loop = asyncio.get_event_loop()
     producer = AIOKafkaProducer(loop=loop, bootstrap_servers=["http://127.0.0.1:8000"])
     await producer.start()
@@ -36,7 +36,7 @@ async def test_send(api_server_factory, fake_kafka_server):
 
 @pytest.mark.asyncio
 async def test_send_and_get(api_server_factory, fake_kafka_server):
-    api_server = api_server_factory(3)
+    api_server, _ = api_server_factory(3)
     loop = asyncio.get_event_loop()
     producer = AIOKafkaProducer(loop=loop, bootstrap_servers=["http://127.0.0.1:8000"])
     consumer = AIOKafkaConsumer(topic="events", loop=loop, bootstrap_servers=["http://127.0.0.1:8000"], group_id='a')

@@ -23,6 +23,7 @@ mypy = "*"
 pytest-asyncio = "*"
 docopt = "*"
 autopep8 = "*"
+pytest-timeout = "*"
 
 [requires]
 python_version = "3.6"

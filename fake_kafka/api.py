@@ -1,4 +1,6 @@
 import logging
+from typing import Union
+
 
 from fastapi import FastAPI
 from starlette.websockets import WebSocket
@@ -8,6 +10,9 @@ from .server import FakeKafkaServer
 from . import messages
 
 from starlette.websockets import WebSocketDisconnect
+
+IntNone = Union[int, None]
+StrNone = Union[str, None]
 
 logger = logging.getLogger(__name__)
 
@@ -63,16 +68,17 @@ class TopicPartitionOffset(BaseModel):
 
 @app.post("/topic_partition_offset/")
 async def topic_partition_offset(tpo: TopicPartitionOffset):
-    return await FakeKafkaServer().seek(tpo.consumer_id, tpo.topic, tpo.partition, tpo.offset)
+    await FakeKafkaServer().seek(tpo.consumer_id, tpo.topic, tpo.partition, tpo.offset)
+    return
 
 
 class Message(BaseModel):
 
     topic: str
-    partition: int = None
-    key: str = None
+    partition: IntNone = None
+    key: StrNone = None
     value: str
-    timestamp: int = None
+    timestamp: IntNone = None
 
 
 @app.post("/topic_message/")
@@ -103,7 +109,7 @@ async def producer_topic_message_ws(websocket: WebSocket):
 
 
 @app.websocket("/consumer_topic_message_ws/{topic}/{consumer_id}")
-async def producer_topic_message_ws(websocket: WebSocket, topic: str, consumer_id: str):
+async def consumer_topic_message_ws(websocket: WebSocket, topic: str, consumer_id: str):
     await websocket.accept()
     server = FakeKafkaServer()
     while True:
