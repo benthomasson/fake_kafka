@@ -20,7 +20,7 @@ class FakeKafkaServerProxy:
         self.producer_websocket = None
 
     async def consumer_subscribe(self, consumer, topic, group_id):
-        await self.session.post(urljoin(self.address, '/subscription'),
+        await self.session.post(urljoin(self.address, '/subscription/'),
                                 json=dict(consumer_id=consumer.consumer_id,
                                           topic=topic,
                                           group_id=group_id))

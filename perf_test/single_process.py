@@ -50,7 +50,9 @@ async def consume_messages(loop, n, key, partition, csv2):
     try:
         async for msg in consumer:
             count += 1
-            pass
+            if count >= n:
+                break
+        assert count == n, 'Did not receive expected number of messages'
         end = time.time()
     finally:
         await consumer.stop()

@@ -57,7 +57,9 @@ async def consume_messages(loop, n, key, partition, csv2):
     try:
         async for msg in consumer:
             count += 1
-            pass
+            if count >= n:
+                break
+        assert count == n, 'Did not receive expected number of messages'
         end = time.time()
     finally:
         await consumer.stop()
@@ -80,7 +82,7 @@ def start_server(limit_max_requests):
     thread.start()
     while not server.started:
         time.sleep(0.01)
-    return thread
+    return thread, server
 
 
 def main(args=None):
@@ -94,14 +96,15 @@ def main(args=None):
     else:
         logging.basicConfig(level=logging.WARNING)
 
-    start_server(2)
+    _, server = start_server(3)
     loop = asyncio.get_event_loop()
 
     print('single_process n: {} key: {} partition: {}'.format(parsed_args['-n'], parsed_args['--key'], parsed_args['--partition']))
     loop.run_until_complete(produce_messages(loop, int(parsed_args['-n']), parsed_args['--key'], parsed_args['--partition'], parsed_args['--csv1']))
     loop.run_until_complete(consume_messages(loop, int(parsed_args['-n']), parsed_args['--key'], parsed_args['--partition'], parsed_args['--csv2']))
+    server.force_exit = True
+    requests.get("http://127.0.0.1:8000/docs")
     loop.close()
-    #requests.get("http://127.0.0.1/docs")
     return 0
 
 
