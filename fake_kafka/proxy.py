@@ -70,6 +70,16 @@ class FakeKafkaServerProxy:
                                                   '/all_partitions/{topic}'.format(topic=topic)))
         return await response.json()
 
+    async def seek(self, consumer, topic, partition, offset):
+
+        response = await self.session.post(urljoin(self.address,
+                                                   "/topic_partition_offset/"),
+                                           json=dict(consumer_id=consumer.consumer_id,
+                                                     topic=topic,
+                                                     partition=partition,
+                                                     offset=offset))
+        return
+
     async def close(self):
         if self.producer_websocket is not None:
             await self.producer_websocket.close()

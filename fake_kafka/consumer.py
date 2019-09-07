@@ -7,6 +7,7 @@ from .exceptions import FakeKafkaConsumerStateError
 from .proxy import FakeKafkaServerProxy
 
 
+
 class State:
 
     async def enter(self, machine):
@@ -27,7 +28,10 @@ class _NotStarted(State):
     def __aiter__(self, machine):
         raise FakeKafkaConsumerStateError('Consumer had not been started')
 
-    def __anext__(self, machine):
+    async def __anext__(self, machine):
+        raise FakeKafkaConsumerStateError('Consumer had not been started')
+
+    async def seek(self, machine, tp, offset):
         raise FakeKafkaConsumerStateError('Consumer had not been started')
 
 
@@ -60,6 +64,8 @@ class _Started(State):
         else:
             return message
 
+    async def seek(self, machine, tp, offset):
+        await machine.server.seek(machine, tp.topic, tp.partition, offset)
 
 Started = _Started()
 
@@ -117,3 +123,7 @@ class AIOKafkaConsumer:
 
     async def getone(self):
         return await self.state.__anext__(self)
+
+    async def seek(self, tp, offset):
+        await self.state.seek(self, tp, offset)
+

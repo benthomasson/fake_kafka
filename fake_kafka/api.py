@@ -53,6 +53,19 @@ async def get_topic_message(topic: str, consumer_id: str):
     return await FakeKafkaServer().get(consumer_id, topic)
 
 
+class TopicPartitionOffset(BaseModel):
+
+    consumer_id: str
+    topic: str
+    partition: int
+    offset: int
+
+
+@app.post("/topic_partition_offset/")
+async def topic_partition_offset(tpo: TopicPartitionOffset):
+    return await FakeKafkaServer().seek(tpo.consumer_id, tpo.topic, tpo.partition, tpo.offset)
+
+
 class Message(BaseModel):
 
     topic: str

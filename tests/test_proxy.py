@@ -129,3 +129,23 @@ async def test_send_get_message_websocket(api_server_factory, fake_kafka_server)
     # Work-around to get the server thread to close.  We need a single non-websocket request.
     requests.get("http://127.0.0.1:8000/docs")
     api_server.join()
+
+
+@pytest.mark.asyncio
+async def test_seek(api_server_factory, fake_kafka_server):
+    api_server = api_server_factory(2)
+    proxy = FakeKafkaServerProxy("http://127.0.0.1:8000")
+    await proxy.consumer_subscribe(Consumer(consumer_id='1'), 'events', 'a')
+    await proxy.send('events', FakeKafkaMessage("events",
+                                                0,
+                                                None,
+                                                None,
+                                                "hello",
+                                                42))
+    assert fake_kafka_server.topics["events"][0][0].value == "hello"
+    response = await proxy.get(Consumer(consumer_id='1'), 'events')
+    assert response == ['events', 0, 0, None, 'hello', 42]
+    await proxy.seek(Consumer(consumer_id='1'), 'events', 0, 0)
+    response = await proxy.get(Consumer(consumer_id='1'), 'events')
+    assert response == ['events', 0, 0, None, 'hello', 42]
+    api_server.join()

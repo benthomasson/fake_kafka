@@ -4,6 +4,7 @@ import asyncio
 import pytest
 import fake_kafka
 from fake_kafka.server import Alive
+from fake_kafka.types import TopicPartition
 
 
 @pytest.fixture
@@ -173,4 +174,42 @@ async def test_producer_and_consumer_different_groups(loop, fake_kafka_server):
         await consumer2.stop()
     assert consumer1.stopped
     assert consumer2.stopped
+    assert producer.stopped
+
+@pytest.mark.asyncio
+async def test_seek(loop, fake_kafka_server):
+    producer = fake_kafka.AIOKafkaProducer(loop=loop)
+    await producer.start()
+    assert producer.started
+    consumer = fake_kafka.AIOKafkaConsumer("my_topic", loop=loop)
+    await consumer.start()
+    assert consumer.started
+    try:
+        await producer.send_and_wait("my_topic", b"Super message1")
+        await producer.send_and_wait("my_topic", b"Super message2")
+        assert len(fake_kafka_server.topics['my_topic'][0]) == 2
+        assert fake_kafka_server.topics['my_topic'][0][0].value == b"Super message1"
+        assert fake_kafka_server.topics['my_topic'][0][1].value == b"Super message2"
+        ai = consumer.__aiter__()
+        msg = await ai.__anext__()
+        assert msg.partition == 0
+        assert msg.offset == 0
+        assert msg.value == b"Super message1"
+        msg = await ai.__anext__()
+        assert msg.partition == 0
+        assert msg.offset == 1
+        assert msg.value == b"Super message2"
+        await consumer.seek(TopicPartition('my_topic', 0), 0)
+        msg = await ai.__anext__()
+        assert msg.partition == 0
+        assert msg.offset == 0
+        assert msg.value == b"Super message1"
+        msg = await ai.__anext__()
+        assert msg.partition == 0
+        assert msg.offset == 1
+        assert msg.value == b"Super message2"
+    finally:
+        await consumer.stop()
+        await producer.stop()
+    assert consumer.stopped
     assert producer.stopped

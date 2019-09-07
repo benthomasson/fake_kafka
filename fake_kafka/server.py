@@ -122,3 +122,8 @@ class FakeKafkaServer:
             return self.topics[topic][partition][offset]
         else:
             return None
+
+    async def seek(self, consumer, topic, partition, offset):
+        logger.debug('seek %s %s %s %s', consumer, topic, partition, offset)
+        group_id = self.consumers_to_groups[consumer]
+        self.partition_offsets[(topic, partition, group_id)] = offset
