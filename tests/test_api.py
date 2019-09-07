@@ -72,14 +72,6 @@ def test_send_message_websocket(test_client, fake_kafka_server):
     assert fake_kafka_server.topics["events"][0][0].value == "hello"
 
 
-def test_get_message_websocket(test_client, fake_kafka_server):
-    test_send_message_websocket(test_client, fake_kafka_server)
-    test_consumer_subscribe(test_client, fake_kafka_server)
-    with test_client.websocket_connect("/consumer_topic_message_ws/events/1") as websocket:
-        message = websocket.receive_json()
-    assert message == ['events', 0, 0, None, 'hello', None]
-
-
 def test_seek(test_client, fake_kafka_server):
     test_get_message(test_client, fake_kafka_server)
     response = test_client.post("/topic_partition_offset/", json=dict(consumer_id="1", topic="events", partition=0, offset=0))
