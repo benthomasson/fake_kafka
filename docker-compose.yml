@@ -1,0 +1,23 @@
+version: '3'
+services:
+  fake_kafka:
+    build:
+      context: .
+      dockerfile: ./compose/fake_kafka/Dockerfile
+    ports:
+      - "9092:9092"
+    command: /start
+  producer:
+    build:
+      context: .
+      dockerfile: ./compose/fake_kafka/Dockerfile
+    command: "/tmp/fake_kafka/examples/producer.py -n 100000 --address http://fake_kafka:9092"
+    depends_on:
+      - fake_kafka
+  consumer:
+    build:
+      context: .
+      dockerfile: ./compose/fake_kafka/Dockerfile
+    command: "/tmp/fake_kafka/examples/consumer.py --address http://fake_kafka:9092"
+    depends_on:
+      - fake_kafka

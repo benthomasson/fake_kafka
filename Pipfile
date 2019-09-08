@@ -7,7 +7,7 @@ name = "pypi"
 fastapi = "*"
 uvicorn = "*"
 aiohttp = "*"
-autopep8 = "*"
+docopt = "*"
 
 [dev-packages]
 bumpversion = "==0.5.3"
@@ -22,7 +22,6 @@ flake8 = "==3.5.0"
 mypy = "*"
 pytest-asyncio = "*"
 docopt = "*"
-autopep8 = "*"
 pytest-timeout = "*"
 
 [requires]
