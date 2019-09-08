@@ -36,7 +36,7 @@ def test_consumer_subscribe(test_client, fake_kafka_server):
     assert response.json() == ['1', 'events', 'a']
     assert fake_kafka_server.consumers_state['1'][0] == Alive
     assert fake_kafka_server.topics_to_consumers[('events', 'a')] == ['1']
-    assert fake_kafka_server.consumers_to_partitions[('events', '1', 'a')] == 0
+    assert fake_kafka_server.consumers_to_partitions[('events', '1', 'a')] == [0]
 
 
 def test_consumer_unsubscribe(test_client, fake_kafka_server):

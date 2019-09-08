@@ -47,7 +47,7 @@ async def test_subscribe(api_server_factory, fake_kafka_server):
     await proxy.consumer_subscribe(Consumer(consumer_id='1'), 'events', 'a')
     assert fake_kafka_server.consumers_state['1'][0] == Alive
     assert fake_kafka_server.topics_to_consumers[('events', 'a')] == ['1']
-    assert fake_kafka_server.consumers_to_partitions[('events', '1', 'a')] == 0
+    assert fake_kafka_server.consumers_to_partitions[('events', '1', 'a')] == [0]
     api_server.join()
 
 

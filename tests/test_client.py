@@ -19,7 +19,7 @@ async def test_subscribe(api_server_factory, fake_kafka_server):
     print(fake_kafka_server.consumers_state)
     assert fake_kafka_server.consumers_state[consumer.consumer_id][0] == Alive
     assert fake_kafka_server.topics_to_consumers[('events', 'a')] == [consumer.consumer_id]
-    assert fake_kafka_server.consumers_to_partitions[('events', consumer.consumer_id, 'a')] == 0
+    assert fake_kafka_server.consumers_to_partitions[('events', consumer.consumer_id, 'a')] == [0]
     api_server.join()
 
 
@@ -43,7 +43,7 @@ async def test_send_and_get(api_server_factory, fake_kafka_server):
     await consumer.start()
     assert fake_kafka_server.consumers_state[consumer.consumer_id][0] == Alive
     assert fake_kafka_server.topics_to_consumers[('events', 'a')] == [consumer.consumer_id]
-    assert fake_kafka_server.consumers_to_partitions[('events', consumer.consumer_id, 'a')] == 0
+    assert fake_kafka_server.consumers_to_partitions[('events', consumer.consumer_id, 'a')] == [0]
     await producer.start()
     await producer.send_and_wait("events", "Super message")
     assert fake_kafka_server.topics["events"][0][0].value == "Super message"

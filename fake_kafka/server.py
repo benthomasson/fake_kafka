@@ -52,7 +52,7 @@ class FakeKafkaServer:
         cls.__instance.topics_to_groups = defaultdict(list)
         cls.__instance.consumers_to_topics = defaultdict(list)
         cls.__instance.consumers_to_groups = defaultdict(lambda: None)
-        cls.__instance.consumers_to_partitions = defaultdict(lambda: -1)
+        cls.__instance.consumers_to_partitions = defaultdict(list)
         cls.__instance.consumer_queues = dict()
         cls.__instance.partition_offsets = defaultdict(lambda: 0)
 
@@ -69,7 +69,7 @@ class FakeKafkaServer:
         for group in self.topics_to_groups[topic]:
             for consumer in self.topics_to_consumers[(topic, group)]:
                 logger.debug('topic %s consumer %s group %s', topic, consumer, group)
-                if self.consumers_to_partitions[topic, consumer, group] == message.partition:
+                if message.partition in self.consumers_to_partitions[topic, consumer, group]:
                     await self.consumer_queues[consumer, topic].put(message)
 
     def consumer_hello(self, consumer):
@@ -119,26 +119,24 @@ class FakeKafkaServer:
             partitions = self.partitions[topic]
             logger.debug('partitions: %s', partitions)
             for partition in partitions:
-                self.consumers_to_partitions[(topic, next(consumers), group_id)] = partition
+                self.consumers_to_partitions[(topic, next(consumers), group_id)].append(partition)
         logger.debug('consumer_rebalance done')
 
     async def get(self, consumer, topic):
         group_id = self.consumers_to_groups[consumer]
-        partition = self.consumers_to_partitions[(topic, consumer, group_id)]
-        self.partition_offsets[(topic, partition, group_id)] += 1
-        return await self.consumer_queues[(consumer, topic)].get()
+        for partition in self.consumers_to_partitions[(topic, consumer, group_id)]:
+            value = await self.consumer_queues[(consumer, topic)].get()
+            self.partition_offsets[(topic, partition, group_id)] += 1
+            return value
 
     async def preload_queue(self, consumer, topic):
         group_id = self.consumers_to_groups[consumer]
-        partition = self.consumers_to_partitions[(topic, consumer, group_id)]
-        logger.debug('preload_queue %s %s %s', consumer, topic, partition)
-        if partition == -1:
-            logger.debug('no partition')
-            return
-        offset = self.partition_offsets[(topic, partition, group_id)]
-        for message in self.topics[topic][partition][offset:]:
-            logger.debug('preload %s', message)
-            await self.consumer_queues[(consumer, topic)].put(message)
+        for partition in self.consumers_to_partitions[(topic, consumer, group_id)]:
+            logger.debug('preload_queue %s %s %s', consumer, topic, partition)
+            offset = self.partition_offsets[(topic, partition, group_id)]
+            for message in self.topics[topic][partition][offset:]:
+                logger.debug('preload %s', message)
+                await self.consumer_queues[(consumer, topic)].put(message)
 
     async def seek(self, consumer, topic, partition, offset):
         logger.debug('seek %s %s %s %s', consumer, topic, partition, offset)

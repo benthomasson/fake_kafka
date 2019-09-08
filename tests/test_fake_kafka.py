@@ -44,7 +44,7 @@ async def test_consumer(loop, fake_kafka_server):
     assert fake_kafka_server.consumers_state[consumer][0] == Alive
     assert consumer in fake_kafka_server.topics_to_consumers[("my_topic", None)]
     assert fake_kafka_server.consumers_to_topics[consumer] == ['my_topic']
-    assert fake_kafka_server.consumers_to_partitions[('my_topic', consumer, None)] == 0
+    assert fake_kafka_server.consumers_to_partitions[('my_topic', consumer, None)] == [0]
     assert consumer.started
     await consumer.stop()
     assert consumer.stopped
