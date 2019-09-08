@@ -1,4 +1,19 @@
 
-from collections import namedtuple
+from typing import NamedTuple, Optional
 
-FakeKafkaMessage = namedtuple('FakeKafkaMessage', ['topic', 'partition', 'offset', 'key', 'value', 'timestamp'])
+
+class FakeKafkaMessage(NamedTuple):
+    topic: str
+    partition: int
+    key: Optional[str]
+    value: str
+    timestamp: Optional[int]
+
+
+class FakeKafkaOffsetMessage(NamedTuple):
+    topic: str
+    partition: int
+    offset: int
+    key: Optional[str]
+    value: str
+    timestamp: Optional[int]

@@ -14,18 +14,13 @@ def fake_kafka_server():
     return server
 
 
-@pytest.fixture
-def loop():
-    return asyncio.get_event_loop()
-
-
 def test_server(fake_kafka_server):
     assert len(fake_kafka_server.topics) == 0
 
 
 @pytest.mark.asyncio
-async def test_producer(loop, fake_kafka_server):
-    producer = fake_kafka.AIOKafkaProducer(loop=loop)
+async def test_producer(fake_kafka_server):
+    producer = fake_kafka.AIOKafkaProducer()
     await producer.start()
     assert producer.started
     try:
@@ -38,24 +33,24 @@ async def test_producer(loop, fake_kafka_server):
 
 
 @pytest.mark.asyncio
-async def test_consumer(loop, fake_kafka_server):
-    consumer = fake_kafka.AIOKafkaConsumer("my_topic", loop=loop)
+async def test_consumer(fake_kafka_server):
+    consumer = fake_kafka.AIOKafkaConsumer("my_topic")
     await consumer.start()
-    assert fake_kafka_server.consumers_state[consumer][0] == Alive
-    assert consumer in fake_kafka_server.topics_to_consumers[("my_topic", None)]
-    assert fake_kafka_server.consumers_to_topics[consumer] == ['my_topic']
-    assert fake_kafka_server.consumers_to_partitions[('my_topic', consumer, None)] == [0]
+    assert fake_kafka_server.consumers_state[consumer.consumer_id][0] == Alive
+    assert consumer.consumer_id in fake_kafka_server.topics_to_consumers[("my_topic", '')]
+    assert fake_kafka_server.consumers_to_topics[consumer.consumer_id] == ['my_topic']
+    assert fake_kafka_server.consumers_to_partitions[('my_topic', consumer.consumer_id, '')] == [0]
     assert consumer.started
     await consumer.stop()
     assert consumer.stopped
 
 
 @pytest.mark.asyncio
-async def test_producer_and_consumer(loop, fake_kafka_server):
-    producer = fake_kafka.AIOKafkaProducer(loop=loop)
+async def test_producer_and_consumer(fake_kafka_server):
+    producer = fake_kafka.AIOKafkaProducer()
     await producer.start()
     assert producer.started
-    consumer = fake_kafka.AIOKafkaConsumer("my_topic", loop=loop)
+    consumer = fake_kafka.AIOKafkaConsumer("my_topic")
     await consumer.start()
     assert consumer.started
     try:
@@ -81,13 +76,13 @@ async def test_producer_and_consumer(loop, fake_kafka_server):
 
 
 @pytest.mark.asyncio
-async def test_producer_and_consumer_same_group(loop, fake_kafka_server):
+async def test_producer_and_consumer_same_group(fake_kafka_server):
     fake_kafka.FakeKafkaServer._init_topics(partitions_per_topic=2)
-    producer = fake_kafka.AIOKafkaProducer(loop=loop)
+    producer = fake_kafka.AIOKafkaProducer()
     await producer.start()
     assert producer.started
-    consumer1 = fake_kafka.AIOKafkaConsumer("my_topic", loop=loop, group_id='a')
-    consumer2 = fake_kafka.AIOKafkaConsumer("my_topic", loop=loop, group_id='a')
+    consumer1 = fake_kafka.AIOKafkaConsumer("my_topic", group_id='a')
+    consumer2 = fake_kafka.AIOKafkaConsumer("my_topic", group_id='a')
     await consumer1.start()
     await consumer2.start()
     assert consumer1.started
@@ -118,12 +113,12 @@ async def test_producer_and_consumer_same_group(loop, fake_kafka_server):
 
 
 @pytest.mark.asyncio
-async def test_producer_and_consumer_different_groups(loop, fake_kafka_server):
-    producer = fake_kafka.AIOKafkaProducer(loop=loop)
+async def test_producer_and_consumer_different_groups(fake_kafka_server):
+    producer = fake_kafka.AIOKafkaProducer()
     await producer.start()
     assert producer.started
-    consumer1 = fake_kafka.AIOKafkaConsumer("my_topic", loop=loop, group_id='a')
-    consumer2 = fake_kafka.AIOKafkaConsumer("my_topic", loop=loop, group_id='b')
+    consumer1 = fake_kafka.AIOKafkaConsumer("my_topic", group_id='a')
+    consumer2 = fake_kafka.AIOKafkaConsumer("my_topic", group_id='b')
     await consumer1.start()
     await consumer2.start()
     assert consumer1.started
@@ -161,11 +156,11 @@ async def test_producer_and_consumer_different_groups(loop, fake_kafka_server):
     assert producer.stopped
 
 @pytest.mark.asyncio
-async def test_seek(loop, fake_kafka_server):
-    producer = fake_kafka.AIOKafkaProducer(loop=loop)
+async def test_seek(fake_kafka_server):
+    producer = fake_kafka.AIOKafkaProducer()
     await producer.start()
     assert producer.started
-    consumer = fake_kafka.AIOKafkaConsumer("my_topic", loop=loop)
+    consumer = fake_kafka.AIOKafkaConsumer("my_topic")
     await consumer.start()
     assert consumer.started
     try:

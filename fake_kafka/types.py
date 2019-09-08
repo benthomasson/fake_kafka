@@ -1,4 +1,7 @@
 
-from collections import namedtuple
+from typing import NamedTuple
 
-TopicPartition = namedtuple('TopicPartition', ['topic', 'partition'])
+
+class TopicPartition(NamedTuple):
+    topic: str
+    partition: int

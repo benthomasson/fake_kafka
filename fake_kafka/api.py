@@ -1,5 +1,5 @@
 import logging
-from typing import Union
+from typing import Optional, List, Tuple
 
 
 from fastapi import FastAPI
@@ -11,16 +11,13 @@ from . import messages
 
 from starlette.websockets import WebSocketDisconnect
 
-IntNone = Union[int, None]
-StrNone = Union[str, None]
-
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
 
 @app.get("/all_partitions/{topic}")
-async def all_partitions(topic: str):
+async def all_partitions(topic: str) -> List[int]:
     return await FakeKafkaServer().all_partitions(topic)
 
 
@@ -30,7 +27,7 @@ class Consumer(BaseModel):
 
 
 @app.post("/consumer/")
-async def consumer_hello(consumer: Consumer):
+async def consumer_hello(consumer: Consumer) -> str:
     return FakeKafkaServer().consumer_hello(consumer.consumer_id)
 
 
@@ -42,19 +39,19 @@ class Subscription(BaseModel):
 
 
 @app.post("/subscription/")
-async def create_subscription(subscription: Subscription):
+async def create_subscription(subscription: Subscription) -> Tuple[str, str, str]:
     return await FakeKafkaServer().consumer_subscribe(subscription.consumer_id,
                                                       subscription.topic,
                                                       subscription.group_id)
 
 
 @app.delete("/subscription/{consumer_id}")
-async def consumer_unsubscribe(consumer_id: str):
+async def consumer_unsubscribe(consumer_id: str) -> str:
     return FakeKafkaServer().consumer_unsubscribe_all(consumer_id)
 
 
 @app.get("/topic_message/{topic}/{consumer_id}")
-async def get_topic_message(topic: str, consumer_id: str):
+async def get_topic_message(topic: str, consumer_id: str) -> messages.FakeKafkaOffsetMessage:
     return await FakeKafkaServer().get(consumer_id, topic)
 
 
@@ -67,7 +64,7 @@ class TopicPartitionOffset(BaseModel):
 
 
 @app.post("/topic_partition_offset/")
-async def topic_partition_offset(tpo: TopicPartitionOffset):
+async def topic_partition_offset(tpo: TopicPartitionOffset) -> None:
     await FakeKafkaServer().seek(tpo.consumer_id, tpo.topic, tpo.partition, tpo.offset)
     return
 
@@ -75,24 +72,23 @@ async def topic_partition_offset(tpo: TopicPartitionOffset):
 class Message(BaseModel):
 
     topic: str
-    partition: IntNone = None
-    key: StrNone = None
+    partition: int
+    key: Optional[str] = None
     value: str
-    timestamp: IntNone = None
+    timestamp: Optional[int] = None
 
 
 @app.post("/topic_message/")
-async def send_topic_message(message: Message):
+async def send_topic_message(message: Message) -> None:
     return await FakeKafkaServer().send(message.topic, messages.FakeKafkaMessage(message.topic,
                                                                            message.partition,
-                                                                           None,
                                                                            message.key,
                                                                            message.value,
                                                                            message.timestamp))
 
 
 @app.websocket("/producer_topic_message_ws")
-async def producer_topic_message_ws(websocket: WebSocket):
+async def producer_topic_message_ws(websocket: WebSocket) -> None:
     await websocket.accept()
     while True:
         try:
@@ -100,7 +96,6 @@ async def producer_topic_message_ws(websocket: WebSocket):
             logger.debug(message)
             await FakeKafkaServer().send(message['topic'], messages.FakeKafkaMessage(message['topic'],
                                                                                message['partition'],
-                                                                               None,
                                                                                message.get('key'),
                                                                                message['value'],
                                                                                message.get('timestamp')))
@@ -109,7 +104,7 @@ async def producer_topic_message_ws(websocket: WebSocket):
 
 
 @app.websocket("/consumer_topic_message_ws/{topic}/{consumer_id}")
-async def consumer_topic_message_ws(websocket: WebSocket, topic: str, consumer_id: str):
+async def consumer_topic_message_ws(websocket: WebSocket, topic: str, consumer_id: str) -> None:
     await websocket.accept()
     server = FakeKafkaServer()
     while True:

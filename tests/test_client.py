@@ -13,8 +13,7 @@ from fake_kafka.producer import AIOKafkaProducer
 @pytest.mark.asyncio
 async def test_subscribe(api_server_factory, fake_kafka_server):
     api_server, _ = api_server_factory()
-    loop = asyncio.get_event_loop()
-    consumer = AIOKafkaConsumer(topic="events", loop=loop, bootstrap_servers=["http://127.0.0.1:8000"], group_id='a')
+    consumer = AIOKafkaConsumer(topic="events", bootstrap_servers=["http://127.0.0.1:8000"], group_id='a')
     await consumer.start()
     print(fake_kafka_server.consumers_state)
     assert fake_kafka_server.consumers_state[consumer.consumer_id][0] == Alive
@@ -26,8 +25,7 @@ async def test_subscribe(api_server_factory, fake_kafka_server):
 @pytest.mark.asyncio
 async def test_send(api_server_factory, fake_kafka_server):
     api_server, _ = api_server_factory()
-    loop = asyncio.get_event_loop()
-    producer = AIOKafkaProducer(loop=loop, bootstrap_servers=["http://127.0.0.1:8000"])
+    producer = AIOKafkaProducer(bootstrap_servers=["http://127.0.0.1:8000"])
     await producer.start()
     await producer.send_and_wait("events", "Super message")
     assert fake_kafka_server.topics["events"][0][0].value == "Super message"
@@ -37,9 +35,8 @@ async def test_send(api_server_factory, fake_kafka_server):
 @pytest.mark.asyncio
 async def test_send_and_get(api_server_factory, fake_kafka_server):
     api_server, _ = api_server_factory(3)
-    loop = asyncio.get_event_loop()
-    producer = AIOKafkaProducer(loop=loop, bootstrap_servers=["http://127.0.0.1:8000"])
-    consumer = AIOKafkaConsumer(topic="events", loop=loop, bootstrap_servers=["http://127.0.0.1:8000"], group_id='a')
+    producer = AIOKafkaProducer(bootstrap_servers=["http://127.0.0.1:8000"])
+    consumer = AIOKafkaConsumer(topic="events", bootstrap_servers=["http://127.0.0.1:8000"], group_id='a')
     await consumer.start()
     assert fake_kafka_server.consumers_state[consumer.consumer_id][0] == Alive
     assert fake_kafka_server.topics_to_consumers[('events', 'a')] == [consumer.consumer_id]

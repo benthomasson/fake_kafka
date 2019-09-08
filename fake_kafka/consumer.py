@@ -1,129 +1,52 @@
 
 import uuid
 
+from typing import List, Optional, Union
+
 from .server import FakeKafkaServer
-from .exceptions import FakeKafkaConsumerStateError
+from .types import TopicPartition
+from .messages import FakeKafkaOffsetMessage
 
 from .proxy import FakeKafkaServerProxy
 
-
-
-class State:
-
-    async def enter(self, machine):
-        pass
-
-    async def exit(self, machine):
-        pass
-
-
-class _NotStarted(State):
-
-    async def start(self, machine):
-        await machine.change_state(Started)
-
-    async def stop(self, machine):
-        raise FakeKafkaConsumerStateError('Stop occurred when consumer had not been started')
-
-    def __aiter__(self, machine):
-        raise FakeKafkaConsumerStateError('Consumer had not been started')
-
-    async def __anext__(self, machine):
-        raise FakeKafkaConsumerStateError('Consumer had not been started')
-
-    async def seek(self, machine, tp, offset):
-        raise FakeKafkaConsumerStateError('Consumer had not been started')
-
-
-NotStarted = _NotStarted()
-
-
-class _Started(State):
-
-    async def enter(self, machine):
-        machine.started = True
-        await machine.server.consumer_subscribe(machine, machine.topic, machine.group_id)
-
-    async def exit(self, machine):
-        machine.started = False
-
-    async def start(self, machine):
-        pass
-
-    async def stop(self, machine):
-        await machine.change_state(Stopped)
-
-    def __aiter__(self, machine):
-        return machine
-
-    async def __anext__(self, machine):
-        message = await machine.server.get(machine, machine.topic)
-        machine.offset += 1
-        if message is None:
-            raise StopAsyncIteration
-        else:
-            return message
-
-    async def seek(self, machine, tp, offset):
-        await machine.server.seek(machine, tp.topic, tp.partition, offset)
-
-Started = _Started()
-
-
-class _Stopped(State):
-
-    async def enter(self, machine):
-        machine.stopped = True
-
-    async def exit(self, machine):
-        raise FakeKafkaConsumerStateError('Consumers cannot be restarted')
-
-    def __aiter__(self, machine):
-        raise FakeKafkaConsumerStateError('Consumer has been stopped')
-
-    def __anext__(self, machine):
-        raise FakeKafkaConsumerStateError('Consumer has been stopped')
-
-
-Stopped = _Stopped()
+from .consumer_fsm import State, NotStarted
 
 
 class AIOKafkaConsumer:
 
-    def __init__(self, topic, loop=None, bootstrap_servers=None, group_id=None, auto_offset_reset=None, use_websocket=False):
-        if bootstrap_servers is None:
-            self.server = FakeKafkaServer()
-        else:
-            self.server = FakeKafkaServerProxy(bootstrap_servers[0], use_websocket=use_websocket)
+    def __init__(self, topic: str,
+                 bootstrap_servers: Optional[List[str]]=None,
+                 group_id: str='',
+                 use_websocket: bool=False) -> None:
+        self.server: Union[FakeKafkaServer, FakeKafkaServerProxy] = FakeKafkaServer() if bootstrap_servers is None \
+            else FakeKafkaServerProxy(bootstrap_servers[0], use_websocket=use_websocket)
         self.consumer_id = str(uuid.uuid4())
-        self.loop = loop
         self.group_id = group_id
         self.topic = topic
         self.started = False
         self.stopped = False
         self.offset = 0
-        self.state = NotStarted
+        self.state: State = NotStarted
 
-    async def change_state(self, state):
+    async def change_state(self, state: State) -> None:
         await self.state.exit(self)
         self.state = state
         await self.state.enter(self)
 
-    async def start(self):
+    async def start(self) -> None:
         await self.state.start(self)
 
-    async def stop(self):
+    async def stop(self) -> None:
         await self.state.stop(self)
 
-    def __aiter__(self):
+    def __aiter__(self) -> 'AIOKafkaConsumer':
         return self.state.__aiter__(self)
 
-    async def __anext__(self):
+    async def __anext__(self) -> FakeKafkaOffsetMessage:
         return await self.state.__anext__(self)
 
-    async def getone(self):
+    async def getone(self) -> FakeKafkaOffsetMessage:
         return await self.state.__anext__(self)
 
-    async def seek(self, tp, offset):
+    async def seek(self, tp: TopicPartition, offset: int) -> None:
         await self.state.seek(self, tp, offset)
-
