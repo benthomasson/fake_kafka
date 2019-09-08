@@ -29,7 +29,8 @@ Features
 Installation
 ------------
 
-::
+To install fake_kafka follow these steps::
+
     $ git clone https://github.com/benthomasson/fake_kafka.git
     $ cd fake_kafka
     $ python setup.py install
