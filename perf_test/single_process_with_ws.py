@@ -33,8 +33,8 @@ from uvicorn.main import Server
 logger = logging.getLogger('single_process')
 
 
-async def produce_messages(loop, n, key, partition, csv1):
-    producer = fake_kafka.AIOKafkaProducer(loop=loop, bootstrap_servers=['http://127.0.0.1:8000'], use_websocket=True)
+async def produce_messages(n, key, partition, csv1):
+    producer = fake_kafka.AIOKafkaProducer(bootstrap_servers=['http://127.0.0.1:8000'], use_websocket=True)
     await producer.start()
     if partition is not None:
         partition = int(partition)
@@ -49,8 +49,8 @@ async def produce_messages(loop, n, key, partition, csv1):
         writer.writerow([n, end - start, (end - start) * 1000000 / n, int(n / (end - start))])
 
 
-async def consume_messages(loop, n, key, partition, csv2):
-    consumer = fake_kafka.AIOKafkaConsumer("my_topic", loop=loop, bootstrap_servers=['http://127.0.0.1:8000'], group_id='a', use_websocket=True)
+async def consume_messages(n, key, partition, csv2):
+    consumer = fake_kafka.AIOKafkaConsumer("my_topic", bootstrap_servers=['http://127.0.0.1:8000'], group_id='a', use_websocket=True)
     await consumer.start()
     start = time.time()
     count = 0
@@ -100,8 +100,8 @@ def main(args=None):
     loop = asyncio.get_event_loop()
 
     print('single_process n: {} key: {} partition: {}'.format(parsed_args['-n'], parsed_args['--key'], parsed_args['--partition']))
-    loop.run_until_complete(produce_messages(loop, int(parsed_args['-n']), parsed_args['--key'], parsed_args['--partition'], parsed_args['--csv1']))
-    loop.run_until_complete(consume_messages(loop, int(parsed_args['-n']), parsed_args['--key'], parsed_args['--partition'], parsed_args['--csv2']))
+    loop.run_until_complete(produce_messages(int(parsed_args['-n']), parsed_args['--key'], parsed_args['--partition'], parsed_args['--csv1']))
+    loop.run_until_complete(consume_messages(int(parsed_args['-n']), parsed_args['--key'], parsed_args['--partition'], parsed_args['--csv2']))
     server.force_exit = True
     requests.get("http://127.0.0.1:8000/docs")
     loop.close()
