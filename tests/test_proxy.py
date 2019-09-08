@@ -15,6 +15,7 @@ from uvicorn.config import Config
 from uvicorn.main import Server
 
 from test_fake_kafka import fake_kafka_server
+fake_kafka_server = fake_kafka_server
 
 
 @pytest.fixture
@@ -55,10 +56,10 @@ async def test_send_message(api_server_factory, fake_kafka_server):
     api_server, _ = api_server_factory()
     proxy = FakeKafkaServerProxy("http://127.0.0.1:8000")
     response = await proxy.send('events', FakeKafkaMessage("events",
-                                                0,
-                                                None,
-                                                "hello",
-                                                int(time.time() * 1000)))
+                                                           0,
+                                                           None,
+                                                           "hello",
+                                                           int(time.time() * 1000)))
     assert response.status == 200, await response.text()
     assert fake_kafka_server.topics["events"][0][0].value == "hello"
     api_server.join()

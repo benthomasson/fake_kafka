@@ -21,6 +21,7 @@ from fake_kafka import AIOKafkaConsumer
 
 logger = logging.getLogger('consumer')
 
+
 async def run_consumer(parsed_args):
     consumer = AIOKafkaConsumer(bootstrap_servers=[parsed_args['--address']],
                                 topic="events",
@@ -56,4 +57,3 @@ def main(args=None):
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv[1:]))
-

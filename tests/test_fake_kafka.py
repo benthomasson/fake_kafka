@@ -1,6 +1,5 @@
 """Tests for `fake_kafka` package."""
 
-import asyncio
 import pytest
 import fake_kafka
 from fake_kafka.server import Alive
@@ -154,6 +153,7 @@ async def test_producer_and_consumer_different_groups(fake_kafka_server):
     assert consumer1.stopped
     assert consumer2.stopped
     assert producer.stopped
+
 
 @pytest.mark.asyncio
 async def test_seek(fake_kafka_server):

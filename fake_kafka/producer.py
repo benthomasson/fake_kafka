@@ -1,7 +1,5 @@
 
-from typing import Optional, List, Union, Dict, Any, Iterator, cast
-from collections import defaultdict
-import random
+from typing import Optional, List, Union, Dict, Iterator, cast
 import time
 from itertools import cycle
 
@@ -15,29 +13,29 @@ from .proxy import FakeKafkaServerProxy
 
 class AIOKafkaProducer:
 
-    def __init__(self, bootstrap_servers:Optional[List[str]]=None, use_websocket:bool=False):
+    def __init__(self, bootstrap_servers: Optional[List[str]]=None, use_websocket: bool=False):
         self.server: Union[FakeKafkaServer, FakeKafkaServerProxy] = FakeKafkaServer() if bootstrap_servers is None \
             else FakeKafkaServerProxy(bootstrap_servers[0], use_websocket=use_websocket)
         self.started = False
         self.stopped = False
-        self.all_partitions_cycle:Dict[str, Iterator[int]] = dict()
-        self.partitions_by_key:Dict[str, int] = dict()
+        self.all_partitions_cycle: Dict[str, Iterator[int]] = dict()
+        self.partitions_by_key: Dict[str, int] = dict()
 
     async def start(self) -> None:
         self.started = True
         self.stopped = False
 
-    async def get_next_partition(self, topic:str) -> int:
+    async def get_next_partition(self, topic: str) -> int:
         if topic not in self.all_partitions_cycle:
             self.all_partitions_cycle[topic] = cycle(await self.server.all_partitions(topic))
         return next(self.all_partitions_cycle[topic])
 
     async def send_and_wait(self,
-                            topic:str,
-                            value:str,
-                            key:Optional[str]=None,
-                            partition:Optional[int]=None,
-                            timestamp_ms:Optional[int]=None) -> None:
+                            topic: str,
+                            value: str,
+                            key: Optional[str]=None,
+                            partition: Optional[int]=None,
+                            timestamp_ms: Optional[int]=None) -> None:
         if not self.started:
             raise FakeKafkaProducerStateError('Send occurred when producer had not been started')
         if self.stopped:

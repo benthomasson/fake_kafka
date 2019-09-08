@@ -55,7 +55,7 @@ async def consume_messages(loop, n, key, partition, csv2):
     start = time.time()
     count = 0
     try:
-        async for msg in consumer:
+        async for msg in consumer: # noqa
             count += 1
             if count >= n:
                 break

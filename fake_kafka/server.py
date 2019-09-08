@@ -2,11 +2,12 @@
 
 from itertools import cycle
 from collections import defaultdict
-from typing import Optional, Dict, Any, List, Tuple
+from typing import Dict, Any, List, Tuple
 import asyncio
 import time
 import logging
 
+from .exceptions import NoAvailablePartition
 from .messages import FakeKafkaMessage, FakeKafkaOffsetMessage
 
 logger = logging.getLogger(__name__)
@@ -75,11 +76,11 @@ class FakeKafkaServer:
 
     async def send(self, topic: str, message: FakeKafkaMessage) -> None:
         message2 = FakeKafkaOffsetMessage(topic=message.topic,
-                                         partition=message.partition,
-                                         offset=len(self.topics[topic][message.partition]),
-                                         key=message.key,
-                                         value=message.value,
-                                         timestamp=message.timestamp)
+                                          partition=message.partition,
+                                          offset=len(self.topics[topic][message.partition]),
+                                          key=message.key,
+                                          value=message.value,
+                                          timestamp=message.timestamp)
         self.topics[topic][message2.partition].append(message2)
 
         for group in self.topics_to_groups[topic]:
@@ -88,11 +89,11 @@ class FakeKafkaServer:
                 if message2.partition in self.consumers_to_partitions[topic, consumer, group]:
                     await self.consumer_queues[consumer, topic].put(message2)
 
-    def consumer_hello(self, consumer:str) -> str:
+    def consumer_hello(self, consumer: str) -> str:
         self.consumers_state[consumer] = (Alive, time.time())
         return consumer
 
-    async def consumer_subscribe(self, consumer:str, topic: str, group_id:str) -> Tuple[str, str, str]:
+    async def consumer_subscribe(self, consumer: str, topic: str, group_id: str) -> Tuple[str, str, str]:
         self.consumers_state[consumer] = (Alive, time.time())
         if group_id not in self.topics_to_groups[topic]:
             self.topics_to_groups[topic].append(group_id)
@@ -104,7 +105,7 @@ class FakeKafkaServer:
         await self.preload_queue(consumer, topic)
         return (consumer, topic, group_id)
 
-    def consumer_unsubscribe_all(self, consumer:str) -> str:
+    def consumer_unsubscribe_all(self, consumer: str) -> str:
         logger.debug('consumer_unsubscribe_all start')
         logger.debug('consumer: %s', consumer)
         group_id = self.consumers_to_groups[consumer]
@@ -124,7 +125,7 @@ class FakeKafkaServer:
         logger.debug('consumer_unsubscribe_all done')
         return consumer
 
-    def consumer_rebalance(self, topic:str, group_id:str) -> None:
+    def consumer_rebalance(self, topic: str, group_id: str) -> None:
         logger.debug('consumer_rebalance start')
         for key in list(self.consumers_to_partitions.keys()):
             if key[0] == topic and key[2] == group_id:
@@ -138,16 +139,16 @@ class FakeKafkaServer:
                 self.consumers_to_partitions[(topic, next(consumers), group_id)].append(partition)
         logger.debug('consumer_rebalance done')
 
-    async def get(self, consumer:str, topic:str) -> FakeKafkaOffsetMessage:
+    async def get(self, consumer: str, topic: str) -> FakeKafkaOffsetMessage:
         group_id = self.consumers_to_groups[consumer]
         for partition in self.consumers_to_partitions[(topic, consumer, group_id)]:
             value = await self.consumer_queues[(consumer, topic)].get()
             self.partition_offsets[(topic, partition, group_id)] += 1
             return value
         else:
-            return FakeKafkaOffsetMessage('',0,0,None,'',0)
+            raise NoAvailablePartition('No available partition')
 
-    async def preload_queue(self, consumer:str, topic:str) -> None:
+    async def preload_queue(self, consumer: str, topic: str) -> None:
         group_id = self.consumers_to_groups[consumer]
         for partition in self.consumers_to_partitions[(topic, consumer, group_id)]:
             logger.debug('preload_queue %s %s %s', consumer, topic, partition)
@@ -156,7 +157,7 @@ class FakeKafkaServer:
                 logger.debug('preload %s', message)
                 await self.consumer_queues[(consumer, topic)].put(message)
 
-    async def seek(self, consumer:str, topic:str, partition:int, offset:int) -> None:
+    async def seek(self, consumer: str, topic: str, partition: int, offset: int) -> None:
         logger.debug('seek %s %s %s %s', consumer, topic, partition, offset)
         group_id = self.consumers_to_groups[consumer]
         self.partition_offsets[(topic, partition, group_id)] = offset

@@ -1,13 +1,15 @@
 
-import asyncio
 import pytest
 
-from test_proxy import api_server_factory
-from test_fake_kafka import fake_kafka_server
-
-from fake_kafka.server import Alive, Unknown
+from fake_kafka.server import Alive
 from fake_kafka.consumer import AIOKafkaConsumer
 from fake_kafka.producer import AIOKafkaProducer
+
+from test_fake_kafka import fake_kafka_server
+from test_proxy import api_server_factory
+
+fake_kafka_server = fake_kafka_server
+api_server_factory = api_server_factory
 
 
 @pytest.mark.asyncio
@@ -47,4 +49,3 @@ async def test_send_and_get(api_server_factory, fake_kafka_server):
     message = await consumer.getone()
     assert message[:-1] == ['events', 0, 0, None, 'Super message']
     api_server.join()
-

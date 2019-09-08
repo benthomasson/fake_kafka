@@ -8,6 +8,7 @@ from pydantic import BaseModel
 
 from .server import FakeKafkaServer
 from . import messages
+from .exceptions import NoAvailablePartition
 
 from starlette.websockets import WebSocketDisconnect
 
@@ -81,10 +82,10 @@ class Message(BaseModel):
 @app.post("/topic_message/")
 async def send_topic_message(message: Message) -> None:
     return await FakeKafkaServer().send(message.topic, messages.FakeKafkaMessage(message.topic,
-                                                                           message.partition,
-                                                                           message.key,
-                                                                           message.value,
-                                                                           message.timestamp))
+                                                                                 message.partition,
+                                                                                 message.key,
+                                                                                 message.value,
+                                                                                 message.timestamp))
 
 
 @app.websocket("/producer_topic_message_ws")
@@ -95,10 +96,10 @@ async def producer_topic_message_ws(websocket: WebSocket) -> None:
             message = await websocket.receive_json()
             logger.debug(message)
             await FakeKafkaServer().send(message['topic'], messages.FakeKafkaMessage(message['topic'],
-                                                                               message['partition'],
-                                                                               message.get('key'),
-                                                                               message['value'],
-                                                                               message.get('timestamp')))
+                                                                                     message['partition'],
+                                                                                     message.get('key'),
+                                                                                     message['value'],
+                                                                                     message.get('timestamp')))
         except WebSocketDisconnect:
             break
 
@@ -113,5 +114,7 @@ async def consumer_topic_message_ws(websocket: WebSocket, topic: str, consumer_i
             if message is None:
                 break
             await websocket.send_json(message)
+        except NoAvailablePartition:
+            break
         except WebSocketDisconnect:
             break

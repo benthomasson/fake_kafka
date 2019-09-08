@@ -1,13 +1,13 @@
 
-import asyncio
 import pytest
 
 from starlette.testclient import TestClient
 
 from fake_kafka.api import app
-from fake_kafka.server import FakeKafkaServer, Alive, Unknown
+from fake_kafka.server import Alive, Unknown
 
 from test_fake_kafka import fake_kafka_server
+fake_kafka_server = fake_kafka_server
 
 
 @pytest.fixture
@@ -52,7 +52,7 @@ def test_send_message(test_client, fake_kafka_server):
                                                              partition=0,
                                                              value="hello"))
     assert response.status_code == 200
-    assert response.json() == None
+    assert response.json() is None
     assert fake_kafka_server.topics["events"][0][0].value == "hello"
 
 

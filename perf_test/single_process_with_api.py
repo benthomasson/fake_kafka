@@ -54,7 +54,7 @@ async def consume_messages(loop, n, key, partition, csv2):
     start = time.time()
     count = 0
     try:
-        async for msg in consumer:
+        async for msg in consumer: # noqa
             count += 1
             if count >= n:
                 break
@@ -95,7 +95,7 @@ def main(args=None):
     else:
         logging.basicConfig(level=logging.WARNING)
 
-    start_server(int(parsed_args['-n'])*2+2)
+    start_server(int(parsed_args['-n']) * 2 + 2)
     loop = asyncio.get_event_loop()
 
     print('single_process n: {} key: {} partition: {}'.format(parsed_args['-n'], parsed_args['--key'], parsed_args['--partition']))

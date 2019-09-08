@@ -24,6 +24,7 @@ from fake_kafka import AIOKafkaProducer
 
 logger = logging.getLogger('producer')
 
+
 async def run_consumer(parsed_args):
     producer = AIOKafkaProducer(bootstrap_servers=[parsed_args['--address']],
                                 use_websocket=True)
@@ -58,4 +59,3 @@ def main(args=None):
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv[1:]))
-

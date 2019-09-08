@@ -57,7 +57,7 @@ class FakeKafkaServerProxy:
                 return data
             except TypeError as e:
                 logger.error(e)
-                return []
+                raise StopAsyncIteration()
         else:
             response = await self.session.get(urljoin(self.address,
                                                       '/topic_message/{topic}/{consumer_id}'.format(topic=topic,

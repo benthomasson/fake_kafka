@@ -6,3 +6,7 @@ class FakeKafkaProducerStateError(Exception):
 
 class FakeKafkaConsumerStateError(Exception):
     pass
+
+
+class NoAvailablePartition(Exception):
+    pass
