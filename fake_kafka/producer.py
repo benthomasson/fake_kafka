@@ -13,7 +13,7 @@ from .proxy import FakeKafkaServerProxy
 
 class AIOKafkaProducer:
 
-    def __init__(self, bootstrap_servers: Optional[List[str]]=None, use_websocket: bool=False):
+    def __init__(self, bootstrap_servers: Optional[List[str]] = None, use_websocket: bool = False):
         self.server: Union[FakeKafkaServer, FakeKafkaServerProxy] = FakeKafkaServer() if bootstrap_servers is None \
             else FakeKafkaServerProxy(bootstrap_servers[0], use_websocket=use_websocket)
         self.started = False
@@ -33,9 +33,9 @@ class AIOKafkaProducer:
     async def send_and_wait(self,
                             topic: str,
                             value: str,
-                            key: Optional[str]=None,
-                            partition: Optional[int]=None,
-                            timestamp_ms: Optional[int]=None) -> None:
+                            key: Optional[str] = None,
+                            partition: Optional[int] = None,
+                            timestamp_ms: Optional[int] = None) -> None:
         if not self.started:
             raise FakeKafkaProducerStateError('Send occurred when producer had not been started')
         if self.stopped:

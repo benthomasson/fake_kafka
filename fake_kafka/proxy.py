@@ -31,7 +31,7 @@ NullResponse = _NullResponse()
 
 class FakeKafkaServerProxy:
 
-    def __init__(self, address: str, use_websocket: bool=False) -> None:
+    def __init__(self, address: str, use_websocket: bool = False) -> None:
         self.address = address
         self.session = aiohttp.ClientSession()
         self.use_websocket = use_websocket

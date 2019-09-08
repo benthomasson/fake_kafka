@@ -15,9 +15,9 @@ from .consumer_fsm import State, NotStarted
 class AIOKafkaConsumer:
 
     def __init__(self, topic: str,
-                 bootstrap_servers: Optional[List[str]]=None,
-                 group_id: str='',
-                 use_websocket: bool=False) -> None:
+                 bootstrap_servers: Optional[List[str]] = None,
+                 group_id: str = '',
+                 use_websocket: bool = False) -> None:
         self.server: Union[FakeKafkaServer, FakeKafkaServerProxy] = FakeKafkaServer() if bootstrap_servers is None \
             else FakeKafkaServerProxy(bootstrap_servers[0], use_websocket=use_websocket)
         self.consumer_id = str(uuid.uuid4())

@@ -56,7 +56,7 @@ class FakeKafkaServer:
         return FakeKafkaServer.__instance
 
     @classmethod
-    def _init_topics(cls, partitions_per_topic: int=1) -> None:
+    def _init_topics(cls, partitions_per_topic: int = 1) -> None:
         cls.__instance.topics = defaultdict(cls.__instance.build_partitions)
         cls.__instance.partitions = defaultdict(lambda: list(range(partitions_per_topic)))
         cls.__instance.consumers_state = defaultdict(lambda: (Unknown, None))
