@@ -2,31 +2,29 @@
 Fake Kafka
 ==========
 
-
-.. image:: https://img.shields.io/pypi/v/fake_kafka.svg
-        :target: https://pypi.python.org/pypi/fake_kafka
+.. image:: https://coveralls.io/repos/github/benthomasson/fake_kafka/badge.svg
+        :target: https://coveralls.io/github/benthomasson/fake_kafka
 
 .. image:: https://img.shields.io/travis/benthomasson/fake_kafka.svg
         :target: https://travis-ci.org/benthomasson/fake_kafka
 
-.. image:: https://readthedocs.org/projects/fake-kafka/badge/?version=latest
-        :target: https://fake-kafka.readthedocs.io/en/latest/?badge=latest
-        :alt: Documentation Status
-
-
-
 
 A test double for Kafka using asyncio.
 
-
 * Free software: Apache Software License 2.0
-* Documentation: https://fake-kafka.readthedocs.io.
-
 
 Features
 --------
 
-* TODO
+* Support for a subset of aiokafka's API
+* Fully event driven implementation using Asyncio
+* Single process mode which is useful inside tests
+* Extremely fast performance in single process mode
+* Consumer, Producer, Server mode using a REST API
+* Consumer, Producer, Server mode using a REST API and websockets for very fast performance
+* Support for consumer groups
+* Open API Specification v3 using FastAPI
+
 
 Credits
 -------
