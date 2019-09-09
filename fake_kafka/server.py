@@ -2,7 +2,7 @@
 
 from itertools import cycle
 from collections import defaultdict
-from typing import Dict, Any, List, Tuple
+from typing import Dict, List, Tuple, Union, Any
 import asyncio
 import time
 import logging
@@ -17,37 +17,39 @@ class _Unknown:
     pass
 
 
-Unknown = _Unknown
+Unknown = _Unknown()
 
 
 class _Alive:
     pass
 
 
-Alive = _Alive
+Alive = _Alive()
 
 
 class _Dead:
     pass
 
 
-Dead = _Dead
+Dead = _Dead()
+
+State = Union[_Unknown, _Alive, _Dead]
 
 
 # Singleton FakeKafkaServer
 class FakeKafkaServer:
 
     __instance: Any = None
-    topics: Dict[str, list]
-    partitions: Any
-    consumers_state: Any
-    topics_to_consumers: Any
-    topics_to_groups: Any
-    consumers_to_topics: Any
-    consumers_to_groups: Any
-    consumers_to_partitions: Any
-    consumer_queues: Any
-    partition_offsets: Any
+    topics: Dict[str, Dict[int, List[FakeKafkaOffsetMessage]]]
+    partitions: Dict[str, List[int]]
+    consumers_state: Dict[str, Tuple[State, float]]
+    topics_to_consumers: Dict[Tuple[str, str], List[str]]
+    topics_to_groups: Dict[str, List[str]]
+    consumers_to_topics: Dict[str, List[str]]
+    consumers_to_groups: Dict[str, str]
+    consumers_to_partitions: Dict[Tuple[str, str, str], List[int]]
+    consumer_queues: Dict[Tuple[str, str], asyncio.Queue]
+    partition_offsets: Dict[Tuple[str, int, str], int]
 
     def __new__(cls) -> 'FakeKafkaServer':
         if FakeKafkaServer.__instance is None:
@@ -59,16 +61,16 @@ class FakeKafkaServer:
     def _init_topics(cls, partitions_per_topic: int = 1) -> None:
         cls.__instance.topics = defaultdict(cls.__instance.build_partitions)
         cls.__instance.partitions = defaultdict(lambda: list(range(partitions_per_topic)))
-        cls.__instance.consumers_state = defaultdict(lambda: (Unknown, None))
+        cls.__instance.consumers_state = defaultdict(lambda: (Unknown, 0.0))
         cls.__instance.topics_to_consumers = defaultdict(list)
         cls.__instance.topics_to_groups = defaultdict(list)
         cls.__instance.consumers_to_topics = defaultdict(list)
-        cls.__instance.consumers_to_groups = defaultdict(lambda: None)
+        cls.__instance.consumers_to_groups = defaultdict(lambda: '')
         cls.__instance.consumers_to_partitions = defaultdict(list)
         cls.__instance.consumer_queues = dict()
         cls.__instance.partition_offsets = defaultdict(lambda: 0)
 
-    def build_partitions(self) -> Dict[str, list]:
+    def build_partitions(self) -> Dict[int, List[FakeKafkaOffsetMessage]]:
         return defaultdict(list)
 
     async def all_partitions(self, topic: str) -> List[int]:
