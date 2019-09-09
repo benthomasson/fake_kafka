@@ -1,0 +1,8 @@
+.git
+.tox
+.pytest_cache
+.mypy_cache
+.coverage
+build
+dist
+**/__pycache__
