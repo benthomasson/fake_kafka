@@ -28,7 +28,7 @@ requirements = [
     'pydantic==0.32.2',
     'starlette==0.12.8',
     'typing-extensions==3.7.4',
-    'uvicorn==0.9.0',
+    'uvicorn==0.11.7',
     'uvloop==0.13.0',
     'websockets==8.0.2',
     'yarl==1.3.0',
