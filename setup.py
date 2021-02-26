@@ -12,7 +12,7 @@ with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
 requirements = [
-    'aiohttp==3.6.0',
+    'aiohttp==3.7.4',
     'async-timeout==3.0.1',
     'attrs==19.1.0',
     'chardet==3.0.4',
