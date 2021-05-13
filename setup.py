@@ -25,7 +25,7 @@ requirements = [
     'idna-ssl==1.1.0',
     'idna==2.8',
     'multidict==4.5.2',
-    'pydantic==0.32.2',
+    'pydantic==1.6.2',
     'starlette==0.12.8',
     'typing-extensions==3.7.4',
     'uvicorn==0.9.0',
