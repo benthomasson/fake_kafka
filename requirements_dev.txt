@@ -6,7 +6,7 @@ attrs==19.1.0
 babel==2.7.0
 bleach==3.1.0
 bumpversion==0.5.3
-certifi==2019.6.16
+certifi==2022.12.7
 chardet==3.0.4
 coverage==4.5.1
 docopt==0.6.2
